@@ -1,4 +1,3 @@
-
 # 数据清晰模块
 class DataClean:
     def __init__(self):
@@ -15,3 +14,6 @@ class DataClean:
 
     def product_extract(self):
         pass
+
+    def clean(self, text):
+        return

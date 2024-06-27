@@ -4,3 +4,6 @@ class DataStatistics:
     """
     def __init__(self):
         pass
+
+    def statistics(self, classify):
+        return
