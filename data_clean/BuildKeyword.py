@@ -55,9 +55,6 @@ class BuildKeyword:
                 elif '产品状况' in i:
                     self.keyword.extend(match)
                     self.keyword_label.extend(['产品状况'] * len(match))
-                elif '期货产品' in i:
-                    self.keyword.extend(match)
-                    self.keyword_label.extend(['期货产品'] * len(match))
         except Exception as e:
             print(f'数据解析失败:{e}')
         print(raw_data)
@@ -69,7 +66,7 @@ class BuildKeyword:
             if 'PDF' in self.data_path[i]:
                 try:
                     with open(self.path + '/' + self.data_path[i], 'rb') as file:
-                        pdf_reader = PyPDF2.PdfReader(file)
+                        pdf_reader = PyPDF2.PdfFileReader(file)
                         num_pages = len(pdf_reader.pages)
                         print(f"Total pages: {num_pages}")
                         if num_pages >= 4:
@@ -85,13 +82,9 @@ class BuildKeyword:
         # 提取对应关键词
         keyword = np.array(self.keyword)
         keyword_label = np.array(self.keyword_label)
-        product = keyword[np.where(keyword_label == '期货产品')]
         strategy = keyword[np.where(keyword_label == '期货策略')]
         state = keyword[np.where(keyword_label == '产品状况')]
         # 清洗大语言模型中的特殊情况
-        for i in range(len(product)):
-            if '等' in str(product[i]):
-                product[i] = product[i].replace('等', '')
         for i in range(len(strategy)):
             if '等' in str(strategy[i]):
                 strategy[i] = strategy[i].replace('等', '')
@@ -99,14 +92,9 @@ class BuildKeyword:
             if '等' in str(state[i]):
                 state[i] = state[i].replace('等', '')
         # 去重
-        product = set(product)
         strategy = set(strategy)
         state = set(state)
-        # 数据保存为三个文件
-        with open('product.txt', 'w', encoding='utf-8') as file:
-            for item in set(product):
-                # 写入每个元素，并在末尾添加换行符
-                file.write(f"{item}\n")
+        # 数据保存为两个文件
         with open('stragery.txt', 'w', encoding='utf-8') as file:
             for item in set(strategy):
                 file.write(f"{item}\n")

@@ -76,7 +76,7 @@ class DataExtractor:
         if hasattr(self, extract_method_name):
             extract_method = getattr(self, extract_method_name)
             content = extract_method(path)
-            return content
+            return content, file_type
         else:
             raise ValueError(f"No extraction method defined for {file_type}")
 
@@ -92,7 +92,7 @@ def DataTempStore(directory_path):
     df = pd.DataFrame(columns=["filename", "content", "filetype"])
     for path in extractor.paths:
         try:
-            content = extractor.extract(path)
+            content, _ = extractor.extract(path)
             filename, filetype = get_name_and_type(path)
             df = df.append({"filename": filename, "content": content, "filetype": filetype}, ignore_index=True)
         except ValueError as e:
