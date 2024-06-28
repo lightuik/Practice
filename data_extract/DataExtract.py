@@ -6,8 +6,9 @@ import tempfile
 
 
 class DataExtractor:
-    def __init__(self, path):
-        self.paths = self._get_paths(path)
+    def __init__(self, path=None):
+        if path is not None:
+            self.paths = self._get_paths(path)
 
     def _get_paths(self, base_path):
         """
