@@ -1,50 +1,42 @@
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import  QtWidgets
+from PyQt5.QtCore import pyqtSignal
+from PyQt5 import  QtCore
+class LoginWindow(QtWidgets.QWidget):
+    login_clicked = pyqtSignal()
+    def __init__(self):
+        super().__init__()
+        self.setupUi()
+    def setupUi(self):
+        self.setWindowTitle("Login")
+        self.resize(400, 150)
+        layout = QtWidgets.QVBoxLayout(self)
+        form_layout = QtWidgets.QFormLayout()
+        self.label = QtWidgets.QLabel("账号：")
+        self.lineEdit = QtWidgets.QLineEdit()
+        form_layout.addRow(self.label, self.lineEdit)
+        self.label_2 = QtWidgets.QLabel("密码：")
+        self.lineEdit_2 = QtWidgets.QLineEdit()
+        self.lineEdit_2.setEchoMode(QtWidgets.QLineEdit.Password)
+        form_layout.addRow(self.label_2, self.lineEdit_2)
 
+        layout.addLayout(form_layout)
 
-class LoginWindow(object):
-    def setupUi(self, Form):
-        Form.setObjectName("Form")
-        height = 150
-        width = 400
-        Form.resize(width, height)  # 窗口大小
+        button_layout = QtWidgets.QHBoxLayout()
+        self.pushButton = QtWidgets.QPushButton("登录")
+        self.pushButton.clicked.connect(self.login_clicked.emit)
+        self.pushButton_2 = QtWidgets.QPushButton("退出")
+        self.pushButton_2.clicked.connect(QtCore.QCoreApplication.instance().quit)
+        button_layout.addWidget(self.pushButton)
+        button_layout.addWidget(self.pushButton_2)
 
-        label_width = int(width/5.5)
-        label_height = int(height/10)
-        button_width = int(width/4)
-        button_height = int(height/5)
-        lineedit_width = int(width/2)
-        lineedit_height = int(height/7.5)
+        layout.addLayout(button_layout)
 
-        # 水平方向上的居中位置
-        label_x = (400 - label_width) // 2 - 100
-        button_x = (400 - button_width) // 2 - (button_width // 2)
-        lineedit_x = (400 - lineedit_width) // 2
+        self.setLayout(layout)
 
-        self.label = QtWidgets.QLabel(Form)
-        self.label.setGeometry(QtCore.QRect(label_x, 30, label_width, label_height))
-        self.label.setObjectName("label")
-        self.label.setText("账号：")
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    window = LoginWindow()
+    window.show()
+    sys.exit(app.exec_())
 
-        self.label_2 = QtWidgets.QLabel(Form)
-        self.label_2.setGeometry(QtCore.QRect(label_x, 60, label_width, label_height))
-        self.label_2.setObjectName("label_2")
-        self.label_2.setText("密码：")
-
-        self.pushButton = QtWidgets.QPushButton(Form)
-        self.pushButton.setGeometry(QtCore.QRect(button_x, 100, button_width, button_height))
-        self.pushButton.setObjectName("pushButton")
-        self.pushButton.setText("登录")
-
-        self.pushButton_2 = QtWidgets.QPushButton(Form)
-        self.pushButton_2.setGeometry(QtCore.QRect(button_x + button_width + 10, 100, button_width, button_height))
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.pushButton_2.setText("退出")
-
-        self.lineEdit = QtWidgets.QLineEdit(Form)
-        self.lineEdit.setGeometry(QtCore.QRect(lineedit_x, 30, lineedit_width, lineedit_height))
-        self.lineEdit.setObjectName("lineEdit")
-
-        self.lineEdit_2 = QtWidgets.QLineEdit(Form)
-        self.lineEdit_2.setGeometry(QtCore.QRect(lineedit_x, 60, lineedit_width, lineedit_height))
-        self.lineEdit_2.setObjectName("lineEdit_2")
-        self.lineEdit_2.setEchoMode(QtWidgets.QLineEdit.Password)  # 设置密码输入框的文字显示为密码形式
