@@ -2,14 +2,12 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QDesktopWidget
 from mainWindow import MainWindow  # 假设这是你的 MainPage 类
 from LoginWindow import LoginWindow  # 假设这是你的 LoginWindow 类
-
 class MyAPP(QMainWindow):
     def __init__(self):
         super().__init__()
         self.login_window = LoginWindow()
         self.login_window.login_clicked.connect(self.show_main_page)
         self.login_window.show()
-
     def show_main_page(self):
         self.login_window.close()  # 关闭登录窗口
         # 设置窗口大小
