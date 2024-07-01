@@ -1,6 +1,5 @@
 import pandas as pd
 import PyPDF2
-import cv2
 from bs4 import BeautifulSoup
 import shutil
 import pdfplumber

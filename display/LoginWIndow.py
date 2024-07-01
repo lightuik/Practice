@@ -24,7 +24,6 @@ class LoginWindow(QtWidgets.QWidget):
         form_layout.addRow(self.label_2, self.lineEdit_2)
 
         layout.addLayout(form_layout)
-
         button_layout = QtWidgets.QHBoxLayout()
         self.pushButton = QtWidgets.QPushButton("登录")
         self.pushButton.clicked.connect(self.login_clicked.emit)
