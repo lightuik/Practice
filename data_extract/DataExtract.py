@@ -1,5 +1,6 @@
 import pandas as pd
 import PyPDF2
+import cv2
 from bs4 import BeautifulSoup
 import shutil
 import pdfplumber
@@ -9,6 +10,9 @@ import tempfile
 import matplotlib.pyplot as plt
 plt.rcParams['font.sans-serif'] = [u'simHei']  # 显示中文
 plt.rcParams['axes.unicode_minus'] = False  # 解决负号问题
+from paddleocr import PaddleOCR
+import cv2
+import layoutparser as lp
 class DataExtractor:
     def __init__(self, path=None):
         if path is not None:
@@ -252,11 +256,74 @@ def delete_corrupt_pdfs(file_paths):
     plot_png(company,values,"invalid PDFs")
     print(f"Total corrupt PDF files deleted: {corrupt_count}")
     return corrupt_count
+
+# ocr 识别图片
+
+
+
+class DocumentProcessor:
+    def __init__(self, ocr_lang='ch'):
+        self.ocr = PaddleOCR(use_angle_cls=True, lang=ocr_lang)
+        self.model = lp.PaddleDetectionLayoutModel(
+            config_path="lp://PubLayNet/ppyolov2_r50vd_dcn_365e_publaynet/config",
+            threshold=0.3,
+            label_map={0: "Text", 1: "Title", 2: "List", 3: "Table", 4: "Figure"},
+            enforce_cpu=False,
+            enable_mkldnn=True
+        )
+
+    def ocr_extract(self, img):
+        text = []
+        raw_data = []
+        result = self.ocr.ocr(img, cls=True)
+        for idx in range(len(result)):
+            res = result[idx]
+            if res is not None:
+                for line in res:
+                    text.append(line[1])
+                    raw_data.append(line)
+        return text, raw_data
+
+    def layout_extract(self, image):
+        img = image[..., ::-1]
+        layout = self.model.detect(image)
+        return img, layout
+
+    def layout_analysis(self, img, layout, table_flag=False, text_flag=False, figura_flag=False):
+        all_text = []
+        try:
+            for block in layout:
+                if table_flag and block.type == "Table":
+                    x1, y1, x2, y2 = map(int, block.coordinates)
+                    segment_image = img[y1:y2, x1:x2]
+                    text, raw_data = self.ocr_extract(segment_image)
+                    all_text.append(text)
+                elif text_flag and block.type == "Text":
+                    x1, y1, x2, y2 = map(int, block.coordinates)
+                    segment_image = img[y1:y2, x1:x2]
+                    text, raw_data = self.ocr_extract(segment_image)
+                    all_text.append(text)
+                elif figura_flag and block.type == "Figure":
+                    x1, y1, x2, y2 = map(int, block.coordinates)
+                    segment_image = img[y1:y2, x1:x2]
+                    text, raw_data = self.ocr_extract(segment_image)
+                    all_text.append(text)
+        except Exception as e:
+            print('数据错误:', e)
+        return all_text
+
+
+# Example usage:
+# processor = DocumentProcessor()
+# img = cv2.imread('path_to_image')
+# img, layout = processor.layout_extract(img)
+# extracted_text = processor.layout_analysis(img, layout, table_flag=True, text_flag=True, figura_flag=True)
+
 if __name__ == "__main__":
     extract=DataExtractor('E:\curriculums\datas')
-    # delete_corrupt_pdfs(extract.paths)
-    # extract.get_company()
-    # extract.check_chart()
+    delete_corrupt_pdfs(extract.paths)
+    extract.get_company()
+    extract.check_chart()
     classify('E:\curriculums\datas')
 
 
