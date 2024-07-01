@@ -40,7 +40,7 @@ class BuildKeyword:
                 {"role": "user", "content": text},
             ],
             stream=False,
-            temperature=0.7  # 0.7更加偏向信息的提取
+            temperature=0.7  # 0.7 更加偏向信息的提取
         )
         raw_data = response.choices[0].message.content
         datas = raw_data.split(',')

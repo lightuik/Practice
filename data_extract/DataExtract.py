@@ -41,7 +41,8 @@ class DataExtractor:
         soup = BeautifulSoup(html_content, 'html.parser')
         return soup
 
-    def decode_PDF(self, binary_pdf):
+    def decode_PDF(self,binary_pdf):
+        all_text=""
         try:
             # 创建临时文件
             with tempfile.NamedTemporaryFile(delete=False) as temp_file:
@@ -53,9 +54,16 @@ class DataExtractor:
                 # 检查PDF文件是否损坏
                 if pdf_reader.isEncrypted:
                     pdf_reader.decrypt('')  # 尝试解密
+                num_pages = pdf_reader.getNumPages()
+
+                # 遍历每一页并提取文本
+                for page_num in range(num_pages):
+                    page = pdf_reader.getPage(page_num)
+                    page_text = page.extract_text()
+                    all_text += page_text
             # 删除临时文件
             os.remove(temp_file_path)
-            return pdf_reader
+            return all_text
         except PyPDF2.utils.PdfReadError as e:
             return f"Error reading PDF file: {e}"
         except Exception as e:
@@ -76,7 +84,7 @@ class DataExtractor:
         if hasattr(self, extract_method_name):
             extract_method = getattr(self, extract_method_name)
             content = extract_method(path)
-            return content, file_type
+            return content,file_type
         else:
             raise ValueError(f"No extraction method defined for {file_type}")
 
@@ -92,7 +100,7 @@ def DataTempStore(directory_path):
     df = pd.DataFrame(columns=["filename", "content", "filetype"])
     for path in extractor.paths:
         try:
-            content, _ = extractor.extract(path)
+            content = extractor.extract(path)
             filename, filetype = get_name_and_type(path)
             df = df.append({"filename": filename, "content": content, "filetype": filetype}, ignore_index=True)
         except ValueError as e:
