@@ -5,7 +5,6 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHB
 from PyQt5.QtChart import QChart, QChartView, QLineSeries
 from PyQt5.QtGui import QPainter
 from PyQt5.QtCore import Qt,pyqtSignal
-
 class CompanyStatisticsView(QMainWindow):
     closed = pyqtSignal()
     def __init__(self):
