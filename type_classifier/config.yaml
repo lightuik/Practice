@@ -1,0 +1,6 @@
+api_key: "sk-7b7a1dfac5f94b539321f3a159d0161b"
+base_url: "https://api.deepseek.com"
+path: "20240301"
+rules: "你是个日常回答机器人"
+build_flag: true
+temperature: 1
