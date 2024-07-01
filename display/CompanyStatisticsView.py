@@ -1,12 +1,14 @@
-
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QToolBar, QPushButton, QLabel, \
     QListView
 from PyQt5.QtChart import QChart, QChartView, QLineSeries
 from PyQt5.QtGui import QPainter
-from PyQt5.QtCore import Qt,pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal
+
+
 class CompanyStatisticsView(QMainWindow):
     closed = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.initUI()
@@ -54,6 +56,7 @@ class CompanyStatisticsView(QMainWindow):
 
         self.setCentralWidget(central_widget)
         self.setGeometry(300, 300, 800, 600)
+
     def create_chart(self):
         # 创建示例图表
         series = QLineSeries()
@@ -77,9 +80,8 @@ class CompanyStatisticsView(QMainWindow):
         self.closed.emit()
         event.accept()
 
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = CompanyStatisticsView()
     sys.exit(app.exec_())
-
-

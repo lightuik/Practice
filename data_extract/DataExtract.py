@@ -7,6 +7,7 @@ import os
 from tqdm import tqdm
 import tempfile
 import matplotlib.pyplot as plt
+
 plt.rcParams['font.sans-serif'] = [u'simHei']  # 显示中文
 plt.rcParams['axes.unicode_minus'] = False  # 解决负号问题
 from paddleocr import PaddleOCR
@@ -46,8 +47,8 @@ class DataExtractor:
         soup = BeautifulSoup(html_content, 'html.parser')
         return soup
 
-    def decode_PDF(self,binary_pdf):
-        all_text=""
+    def decode_PDF(self, binary_pdf):
+        all_text = ""
         try:
             # 创建临时文件
             with tempfile.NamedTemporaryFile(delete=False) as temp_file:
@@ -92,16 +93,18 @@ class DataExtractor:
             return content, file_type
         else:
             raise ValueError(f"No extraction method defined for {file_type}")
+
     def get_company(self):
         """
          获取所有公司的名称，储存在一个txt中
          """
 
-        all_data=[self.spilt_company_name(path) for path in self.paths]
+        all_data = [self.spilt_company_name(path) for path in self.paths]
         with open('company.txt', 'w', encoding='utf-8') as f:
             for i in set(all_data):
                 f.write(f'{i}\n')
-    def get_name_and_type(self,path):
+
+    def get_name_and_type(self, path):
         """
          获取完整路径的文件名称和扩展名称
          :param path:例如"E:\curriculums\datas\20240302\保诚期货_210098.PDF"
@@ -111,10 +114,11 @@ class DataExtractor:
         file_name_without_extension, file_extension = os.path.splitext(file_name)
         return file_name_without_extension, file_extension
 
-    def spilt_company_name(self,path):
+    def spilt_company_name(self, path):
         filename, file_extension = self.get_name_and_type(path)
         company_name = filename.split("_")[0]
         return company_name
+
     def check_chart(self):
         """
         检测路径中的文件是否包含表格，并将包含表格的文件路径保存到 chart.txt 文件中。
@@ -142,6 +146,8 @@ class DataExtractor:
             for file_path in set(all_data):
                 f.write(f'{file_path}\n')
         return all_data
+
+
 def DataTempStore(directory_path):
     extractor = DataExtractor(directory_path)
     df = pd.DataFrame(columns=["filename", "content", "filetype"])
@@ -153,6 +159,8 @@ def DataTempStore(directory_path):
         except ValueError as e:
             print(e)
     return df
+
+
 def plot_png(company, values, name):
     # 按顺序设置 x 位置
     x_positions = range(len(company))
@@ -172,6 +180,8 @@ def plot_png(company, values, name):
     plt.gcf().set_size_inches(20, 7)
     plt.savefig(name + '_plot.png', dpi=300, bbox_inches='tight', transparent=False)
     plt.clf()
+
+
 # 将无表格的和有表格的分类
 def classify(path):
     try:
@@ -193,8 +203,8 @@ def classify(path):
                 os.mkdir('no_chart/' + company[i])
     except:
         print('error')
-    extract=DataExtractor(path)
-    file_paths =extract.paths
+    extract = DataExtractor(path)
+    file_paths = extract.paths
     with open('chart.txt', 'r', encoding='utf-8') as file:
         all_file = file.readlines()
     for i in range(len(all_file)):
@@ -216,13 +226,15 @@ def classify(path):
             no_chart_values[company.index(file_name.split('_')[0])] += 1
     plot_png(company, chart_values, 'chart')
     plot_png(company, no_chart_values, 'no_chart')
+
+
 def delete_corrupt_pdfs(file_paths):
     """
     检查列表中的 PDF 文件是否损坏，并删除损坏的文件。
     :param file_paths: 包含 PDF 和 HTML 文件路径的列表
     :return: 删除的损坏 PDF 文件数量
     """
-    extractor=DataExtractor()
+    extractor = DataExtractor()
     corrupt_files = []
     corrupt_count = 0
     try:
@@ -232,7 +244,7 @@ def delete_corrupt_pdfs(file_paths):
     except:
         print('error')
     for file_path in file_paths:
-        company_name=extractor.spilt_company_name(file_path)
+        company_name = extractor.spilt_company_name(file_path)
         if file_path.lower().endswith('.pdf'):
             try:
                 with open(file_path, 'rb') as pdf_file:
@@ -243,7 +255,7 @@ def delete_corrupt_pdfs(file_paths):
             except Exception as e:
                 print(f"File {file_path} is corrupt: {e}")
                 corrupt_files.append(file_path)
-                company_dict[company_name]+=1
+                company_dict[company_name] += 1
                 corrupt_count += 1
 
     for file_path in corrupt_files:
@@ -252,13 +264,13 @@ def delete_corrupt_pdfs(file_paths):
             print(f"Deleted corrupt file: {file_path}")
         except Exception as e:
             print(f"Error deleting file {file_path}: {e}")
-    values=list(company_dict.values())
-    plot_png(company,values,"invalid PDFs")
+    values = list(company_dict.values())
+    plot_png(company, values, "invalid PDFs")
     print(f"Total corrupt PDF files deleted: {corrupt_count}")
     return corrupt_count
 
-# ocr 识别图片
 
+# ocr 识别图片
 
 
 class DocumentProcessor:
@@ -320,7 +332,7 @@ class DocumentProcessor:
 # extracted_text = processor.layout_analysis(img, layout, table_flag=True, text_flag=True, figura_flag=True)
 
 if __name__ == "__main__":
-    extract=DataExtractor('E:\curriculums\datas')
+    extract = DataExtractor('E:\curriculums\datas')
     delete_corrupt_pdfs(extract.paths)
     extract.get_company()
     extract.check_chart()

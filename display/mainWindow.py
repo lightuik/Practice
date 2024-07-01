@@ -1,7 +1,10 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QDesktopWidget,QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit,QTextBrowser, QPushButton
+from PyQt5.QtWidgets import QApplication, QDesktopWidget, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, \
+    QTextBrowser, QPushButton
 from control import MainPage
 from CompanyStatisticsView import CompanyStatisticsView
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
