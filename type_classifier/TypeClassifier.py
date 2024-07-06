@@ -32,7 +32,7 @@ class TypeClassifier:
                     {"role": "system", "content": f"{self.rules}"},
                     {"role": "user", "content": text},
                 ],
-                stream=False,
+                stream=False
             )
         raw_data = response.choices[0].message.content
         return raw_data
@@ -63,14 +63,11 @@ class TypeClassifier:
                 return self.expert_chat(text=kwargs['text'], class_type=kwargs['class_type'])
             else:
                 print('不合法参数')
-        except:
-            print('传入参数有误')
+        except Exception as e:
+            print('传入参数有误:', e)
             return None
 
 
 if __name__ == "__main__":
     model = TypeClassifier(config_path='config.yaml')
-    print(model.predict(mode=1, text='【铜】美国2月Markit制造业PMI超预期，为近17个月新'
-                                     '高，1月成屋销售创近一年来最大增幅。盘面偏强，但节后下游需求恢复缓慢，现货成交有限，仍贴'
-                                     '水期货。美联储官员再为降息预期降温，警告通胀改善仍不能过度宽松。美国经济数据偏强，铜价向上攀升'
-                                     '，降息预期被降温，上方有限，沪铜03预计仍于67000-70000元/吨震荡。', class_type=1))
+    print(model.predict(mode=1, text='铜价格将继续受到降息预期以及避险情绪的影响', class_type=0))
