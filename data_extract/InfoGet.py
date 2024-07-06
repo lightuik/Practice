@@ -4,7 +4,7 @@ from utils import TextGetorHtml
 import yaml
 from DataExtract import DocumentProcessor
 import os
-from utils import find_allpage, pdf2img, check_chart
+from utils import find_allpage, pdf2img, check_chart, get_times
 import PyPDF2
 
 """ 
@@ -62,6 +62,7 @@ class InformationExtractor:
         :param company_name: 输入的所属的公司
         :return: 返回预测结果
         """
+
         content = self.extractor.decode(content, file_type)
         info_getor = TextGetorHtml(content, company_name)
         texts = info_getor.get_texts()
@@ -86,6 +87,8 @@ class InformationExtractor:
                     # 检测是否为PDF
                     if 'PDF' in i:
                         # 启用关键字搜索
+                        content_binary, file_type = self.extractor.extract(path + "\\" + keys + '\\' + i)
+                        time = get_times(content_binary, file_type)
                         if self.all_params_pdf[keys]['keyword'] is not None:
                             # 使用find_allpage的方式查找关键字所在页
                             text, all_page = find_allpage(path + "\\" + keys + '\\' + i,
@@ -96,7 +99,7 @@ class InformationExtractor:
                                 result = self.model.predict(mode=1, text=text.replace(' ', ''), class_type=0)
                                 # model返回的为字符串，如果为空时长度为2，检测是否为空
                                 if len(result) != 2:
-                                    consequence[keys] = result
+                                    consequence[i] = [result, content_binary, file_type, time]
                                 # 如果为空说明可能其中有表格没提取到，那么便对含有关键词的页启用表格查找
                                 if self.all_params_pdf[keys]['chart'] and len(result) == 2:
                                     # 将表格转化为图像格式
@@ -114,7 +117,7 @@ class InformationExtractor:
                                         result = self.model.predict(mode=1, text=text.replace(' ', ''), class_type=0)
                                         all_result.append(result)
                                     # 有些表格可能在描述同一件事，可能得到同一个结果，因此使用集合去除重复
-                                    consequence[keys] = set(all_result)
+                                    consequence[i] = [set(all_result), content_binary, file_type, time]
                             else:
                                 print(i)  # 定位关键字不正确的文本
                         else:  # 启动表格搜素方式
@@ -140,7 +143,7 @@ class InformationExtractor:
                                 result = self.model.predict(mode=1, text=text.replace(' ', ''), class_type=0)
                                 all_result.append(result)
                             # 有些表格可能在描述同一件事，可能得到同一个结果，因此使用集合去除重复
-                            consequence[keys] = set(all_result)
+                            consequence[i] = [set(all_result), content_binary, file_type, time]
         return consequence
 
 
@@ -151,6 +154,7 @@ if __name__ == "__main__":
     # df = DataTempStore("../data_extract/chart")
     # df["classification"] = df.apply(
     #     lambda row: info_extractor.parser_html(row["content"], row["filetype"], row['filename'].split("_")[0]), axis=1)
+    # df["date"] = df.apply(lambda row: get_times(row["content"], row["filetype"]), axis=1)
     # print(df["classification"])
 
     # 提取PDF

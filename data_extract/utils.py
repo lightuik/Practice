@@ -9,8 +9,7 @@ import re
 from data_clean.DataClean import DataClean
 import PyPDF2
 import pandas as pd
-from type_classifier.TypeClassifier import TypeClassifier
-import os
+from DataExtract import DataExtractor
 
 document_check = DocumentProcessor()
 cleaner = DataClean()
@@ -319,6 +318,25 @@ def extract_tables_from_html(soup):
         # 添加到列表中
         df_list.append(df)
     return df_list
+
+
+def extract_times(text):
+    # 定义正则表达式模式，匹配年份、任意字符、月份、任意字符和日期
+    date_pattern = r'(2024)(.{1})(\d{1,2})(.{1})(\d{1,2})'
+    # 使用re.findall来查找所有匹配的日期
+    matches = re.findall(date_pattern, text)
+    # 将匹配的结果格式化为日期字符串
+    dates = ["{}{}{}{}{}".format(year, '/', month, '/', day) for year, _, month, __, day in matches]
+    return dates[0]
+
+
+def get_times(content, type):
+    extractor = DataExtractor()
+    content = extractor.decode(content, type)
+    if type == "html":
+        return extract_times(content.get_text())
+    else:
+        return extract_times(content.replace('\n', '').replace(' ', ''))
 
 
 # 拼接表

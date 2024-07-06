@@ -1,9 +1,9 @@
 beautifulsoup4==4.12.3
 jieba==0.42.1
 layoutparser==0.0.0
-matplotlib==3.9.0
+matplotlib==3.9.1
 numpy==2.0.0
-openai==1.35.7
+openai==1.35.10
 opencv_contrib_python==4.6.0.66
 opencv_python==4.6.0.66
 opencv_python_headless==4.10.0.84
@@ -18,3 +18,4 @@ PyQt5_sip==12.13.0
 PyYAML==6.0.1
 Requests==2.32.3
 tqdm==4.66.4
+PyMuPDF==1.24.7
