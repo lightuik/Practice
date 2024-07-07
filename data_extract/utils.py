@@ -270,7 +270,7 @@ class TextGetorHtml:
     def __init__(self, soup, company_name):
         self.soup = soup
         self.company_name = company_name
-        self.get_from_tabel_list = ["上海中期", "中泰期货", "先锋期货", "兴业期货", "通道期货"]
+        self.get_from_tabel_list = ["上海中期", "中泰期货", "先锋期货", "兴业期货", "通道期货", "弘业期货", "宏源期货"]
 
     def get_text_from_table(self):
         table_list = extract_tables_from_html(self.soup)
