@@ -92,88 +92,77 @@ class InformationExtractor:
         """
         :param path: 输入的为chart和no_chart所在的路径
         :return: 返回预测结果为一个列表，列表中的每个元素为{"filename": i, "content": content_binary, "predict": set(all_result),
-                                           "filetype": "PDF"
-                                , "time": time}
+                                               "filetype": "PDF", "time": time}
         """
+
+        def extract_and_predict(file_path, keyword, pages, chart):
+            content_binary, file_type = self.extractor.extract(file_path)
+            try:
+                time = get_times(content_binary, "PDF")
+            except:
+                print(file_path)
+                time = file_path
+
+            if keyword is not None:
+                text, all_page = find_allpage(file_path, words=keyword, pages=pages)
+                if text is not None:
+                    result = self.model.predict(mode=1, text=text.replace(' ', ''), class_type=0)
+                    if len(result) != 2:
+                        return {"filename": os.path.basename(file_path), "content": content_binary, "predict": result,
+                                "filetype": "PDF", "time": time}
+                    elif chart and len(result) == 2:
+                        image = pdf2img(file_path, all_page)
+                        all_result = [self.model.predict(mode=1, text=':'.join(str(x) for x in
+                                                                               self.document_check.ocr_extract_merge(
+                                                                                   img,
+                                                                                   distance=self.all_params_pdf[keys][
+                                                                                       'distance'])).replace(' ', ''),
+                                                         class_type=0) for img in image]
+                        return {"filename": os.path.basename(file_path), "content": content_binary,
+                                "predict": set(all_result),
+                                "filetype": "PDF", "time": time}
+                else:
+                    print(os.path.basename(file_path))
+            else:
+                with open(file_path, 'rb') as file:
+                    reader = PyPDF2.PdfFileReader(file)
+                    num_pages = reader.numPages
+
+                if not pages:
+                    page_index = range(num_pages)
+                elif pages[0] == 'index' and pages[1] > 0 and 0 < pages[2] < num_pages:
+                    page_index = range(pages[1], pages[2])
+                elif pages[0] == 'index' and pages[1] > 0 and pages[2] < 0:
+                    page_index = range(pages[1], num_pages + pages[2])
+                else:
+                    page_index = range(num_pages)
+
+                all_result = []
+                for j in page_index:
+                    chart_text = check_chart(file_path, j, mode=1)
+                    result = self.model.predict(mode=1, text=':'.join(str(x) for x in chart_text).replace(' ', ''),
+                                                class_type=0)
+                    all_result.append(result)
+
+                return {"filename": os.path.basename(file_path), "content": content_binary, "predict": set(all_result),
+                        "filetype": "PDF", "time": time}
+
         data_dir = os.listdir(path)
         all_consequence = []
-        # 遍历文件
+
         for keys in data_dir:
-            # 判断是否已经有对应的处理关键字
-            if keys in self.all_params_pdf.keys():
-                # 找到路径
-                for i in os.listdir(path + "\\" + keys):
-                    # 检测是否为PDF
-                    if 'PDF' in i:
-                        # 启用关键字搜索
-                        content_binary, file_type = self.extractor.extract(path + "\\" + keys + '\\' + i)
-                        try:
-                            time = get_times(content_binary, "PDF")
-                        except:
-                            print(path)
-                            time = path
-                        if self.all_params_pdf[keys]['keyword'] is not None:
-                            # 使用find_allpage的方式查找关键字所在页
-                            text, all_page = find_allpage(path + "\\" + keys + '\\' + i,
-                                                          words=self.all_params_pdf[keys]['keyword'],
-                                                          pages=self.all_params_pdf[keys]['pages'])
-                            # 如果返回的文本不是没有则预测，有些时候文本没有说明关键字不准确
-                            if text is not None:
-                                result = self.model.predict(mode=1, text=text.replace(' ', ''), class_type=0)
-                                # model返回的为字符串，如果为空时长度为2，检测是否为空
-                                if len(result) != 2:
-                                    consequence={"filename": i, "content": content_binary, "predict": result,"filetype":"PDF"
-                                     ,"time": time}
-                                    all_consequence.append(consequence)
-                                # 如果为空说明可能其中有表格没提取到，那么便对含有关键词的页启用表格查找
-                                if self.all_params_pdf[keys]['chart'] and len(result) == 2:
-                                    # 将表格转化为图像格式
-                                    image = pdf2img(os.path.join(path,keys,i), all_page)
-                                    # 遍历所有表格图像
-                                    all_result = []
-                                    for img in image:
-                                        # 合并相邻的表格文本
-                                        chart_text = self.document_check.ocr_extract_merge(img, distance=
-                                        self.all_params_pdf[keys][
-                                            'distance'])
-                                        # 分隔符送入模型
-                                        separator = ':'
-                                        text = separator.join(str(x) for x in chart_text)
-                                        result = self.model.predict(mode=1, text=text.replace(' ', ''), class_type=0)
-                                        all_result.append(result)
-                                    # 有些表格可能在描述同一件事，可能得到同一个结果，因此使用集合去除重复
-                                    consequence={"filename": i, "content": content_binary, "predict": set(all_result),"filetype":"PDF"
-                                     ,"time": time}
-                                    all_consequence.append(consequence)
-                            else:
-                                print(i)  # 定位关键字不正确的文本
-                        else:  # 启动表格搜素方式
-                            with open(os.path.join(path, keys, i), 'rb') as file:
-                                reader = PyPDF2.PdfFileReader(file)
-                                num_pages = reader.numPages
-                            pages = self.all_params_pdf[keys]['pages']
-                            # 表格参数的检测，如果长度为0说明查所有页，如果第一个为index，第二个和第三个为数字，说明查之间所有页，
-                            # 若最后一个数字为负则从最后一页加上负为终止
-                            if len(pages) == 0:
-                                page_index = range(num_pages)
-                            elif pages[0] == 'index' and pages[1] > 0 and 0 < pages[2] < num_pages:
-                                page_index = range(pages[1], pages[2])
-                            elif pages[0] == 'index' and pages[1] > 0 and pages[2] < 0:
-                                page_index = range(pages[1], num_pages + pages[2])
-                            else:
-                                page_index = range(num_pages)
-                            all_result = []
-                            for j in page_index:
-                                chart_text = check_chart(os.path.join(path, keys, i), j, mode=1)
-                                separator = ':'
-                                text = separator.join(str(x) for x in chart_text)
-                                result = self.model.predict(mode=1, text=text.replace(' ', ''), class_type=0)
-                                all_result.append(result)
-                            # 有些表格可能在描述同一件事，可能得到同一个结果，因此使用集合去除重复
-                            consequence = {"filename": i, "content": content_binary, "predict": set(all_result),
-                                           "filetype": "PDF"
-                                , "time": time}
-                            all_consequence.append(consequence)
+            if keys not in self.all_params_pdf.keys():
+                self.all_params_pdf[keys]={'keyword': ['all'], "pages": [], "chart": None, "distance": 15}
+            for file in os.listdir(os.path.join(path, keys)):
+                if 'PDF' in file:
+                    file_path = os.path.join(path, keys, file)
+                    consequence = extract_and_predict(file_path, self.all_params_pdf[keys]['keyword'],
+                                                        self.all_params_pdf[keys]['pages'],
+                                                        self.all_params_pdf[keys]['chart'])
+                    if consequence:
+                        all_consequence.append(consequence)
+
+
         return all_consequence
 
 

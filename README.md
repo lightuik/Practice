@@ -20,3 +20,10 @@ v3.1.2
 3. 解决了get_time的bug
    soup.get_text()有可能不包含时间信息，因为有的html文件时间被放在之前的宏定义里，所以直接传入str(soup)
 4. 删除函数DataExtract.DataTempStore，修改后的文件读取方式不再需要它构建dataframe。
+5. 在parse_pdf中添加：
+   ```python
+   if keys not in self.all_params_pdf.keys():
+       self.all_params_pdf[keys]={'keyword': ['all'], "pages": [], "chart": None, "distance": 15}
+   ```
+   把没提取的关键字的公司设置成上述。
+6. 将parse_pdf提取内容进行封装
