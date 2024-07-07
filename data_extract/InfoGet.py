@@ -80,7 +80,7 @@ class InformationExtractor:
         # 遍历文件
         for keys in data_dir:
             # 判断是否已经有对应的处理关键字
-            if keys in self.all_params_pdf:
+            if keys in self.all_params_pdf.keys():
                 # 找到路径
                 for i in os.listdir(path + "\\" + keys):
                     # 检测是否为PDF
@@ -100,7 +100,7 @@ class InformationExtractor:
                                 # 如果为空说明可能其中有表格没提取到，那么便对含有关键词的页启用表格查找
                                 if self.all_params_pdf[keys]['chart'] and len(result) == 2:
                                     # 将表格转化为图像格式
-                                    image = pdf2img('chart\\' + keys + '\\' + i, all_page)
+                                    image = pdf2img('E:\\curriculums\\data\\chart\\' + keys + '\\' + i, all_page)
                                     # 遍历所有表格图像
                                     all_result = []
                                     for img in image:
@@ -146,12 +146,4 @@ class InformationExtractor:
 
 if __name__ == "__main__":
     info_extractor = InformationExtractor()
-    # 提取HTML
-    # info_extractor = InformationExtractor()
-    # df = DataTempStore("../data_extract/chart")
-    # df["classification"] = df.apply(
-    #     lambda row: info_extractor.parser_html(row["content"], row["filetype"], row['filename'].split("_")[0]), axis=1)
-    # print(df["classification"])
-
-    # 提取PDF
-    # info_extractor.parser_pdf('chart')
+    info_extractor.parser_pdf("E:\curriculums\data\chart")
