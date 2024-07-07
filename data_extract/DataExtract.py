@@ -110,7 +110,6 @@ class DataExtractor:
         """
          获取所有公司的名称，储存在一个txt中
          """
-
         all_data = [self.spilt_company_name(path) for path in self.paths]
         with open('company.txt', 'w', encoding='utf-8') as f:
             for i in set(all_data):
@@ -158,20 +157,6 @@ class DataExtractor:
             for file_path in set(all_data):
                 f.write(f'{file_path}\n')
         return all_data
-
-
-def DataTempStore(directory_path):
-    extractor = DataExtractor(directory_path)
-    df = pd.DataFrame(columns=["filename", "content", "filetype"])
-    for path in extractor.paths:
-        try:
-            content, _ = extractor.extract(path)
-            filename, filetype = extractor.get_name_and_type(path)
-            df = df.append({"filename": filename, "content": content, "filetype": filetype}, ignore_index=True)
-        except ValueError as e:
-            print(e)
-    return df
-
 
 # 有表无表的绘图
 def plot_png(company, values, name):

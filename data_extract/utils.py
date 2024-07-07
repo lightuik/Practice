@@ -10,7 +10,7 @@ from data_clean.DataClean import DataClean
 import PyPDF2
 import pandas as pd
 from DataExtract import DataExtractor
-
+from bs4 import BeautifulSoup
 document_check = DocumentProcessor()
 cleaner = DataClean()
 
@@ -334,7 +334,7 @@ def get_times(content, type):
     extractor = DataExtractor()
     content = extractor.decode(content, type)
     if type == "html":
-        return extract_times(content.get_text())
+        return extract_times(str(content))
     else:
         return extract_times(content.replace('\n', '').replace(' ', ''))
 
@@ -351,3 +351,9 @@ def concatenate_dataframes(df, separator=","):
         row_str = separator.join(map(str, row))  # 将每个元素转为字符串并用分隔符拼接
         result.append(row_str)
     return "|".join(result)  # 每行之间用换行符分隔
+if __name__=="__main__":
+    with open("E:\curriculums\data\\no_chart\华安期货\华安期货_233493_2.html", 'r', encoding='UTF-8') as f:
+        html_content = f.read()
+    # Parse the HTML
+    soup = BeautifulSoup(html_content, 'html.parser')
+    extract_times(str(soup))
