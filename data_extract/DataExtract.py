@@ -7,11 +7,19 @@ import os
 from tqdm import tqdm
 import tempfile
 import matplotlib.pyplot as plt
+import numpy as np
+import cv2
 
 plt.rcParams['font.sans-serif'] = [u'simHei']  # 显示中文
 plt.rcParams['axes.unicode_minus'] = False  # 解决负号问题
 from paddleocr import PaddleOCR
 import layoutparser as lp
+
+
+def get_box_centers(box):
+    x_center = (box[0][0] + box[2][0]) / 2
+    y_center = (box[0][1] + box[2][1]) / 2
+    return x_center, y_center
 
 
 class DataExtractor:
@@ -165,7 +173,14 @@ def DataTempStore(directory_path):
     return df
 
 
+# 有表无表的绘图
 def plot_png(company, values, name):
+    """
+    :param company:公司名列表
+    :param values: 统计值
+    :param name: 绘制表的名字
+    :return:
+    """
     # 按顺序设置 x 位置
     x_positions = range(len(company))
     # 设置图的大小，根据真实情况调整 figsize 参数
@@ -188,6 +203,10 @@ def plot_png(company, values, name):
 
 # 将无表格的和有表格的分类
 def classify(path):
+    """
+    :param path:输入待分类的路径
+    :return: 无返回，输出统计图以及分类到对应文件夹
+    """
     try:
         if not os.path.exists('chart/'):
             os.mkdir('chart/')
@@ -299,6 +318,63 @@ class DocumentProcessor:
                     text.append(line[1])
                     raw_data.append(line)
         return text, raw_data
+
+    def ocr_extract_merge(self, img, distance):
+        '''
+        :param img: 输入的pdf图片
+        :param distance: 可以接受合并的最大距离
+        :return: 返回提取得到的数据
+        '''
+        vertical_threshold = distance
+        labels = []
+        # 其余代码与原方法一致
+        text = []
+        raw_data = []
+        result = self.ocr.ocr(img, cls=True)
+
+        # 存储每个文本的位置信息和内容
+        text_with_position = []
+
+        for idx in range(len(result)):
+            res = result[idx]
+            if res is not None:
+                for line in res:
+                    # 假设位置信息在 line[0] 中, 文本在 line[1] 中
+                    text_with_position.append((line[0], line[1]))
+
+        # 按照文本的顶部（y）坐标排序，这里假设每个bounding box的格式为
+        # [(x1, y1), (x2, y2), (x3, y3), (x4, y4)], 我们取 y1 作为排序依据
+        text_with_position = sorted(text_with_position, key=lambda item: item[0][0][1])
+
+        current_group = [text_with_position[0][1][0]]  # 只包含第一个文本块的文本
+        previous_center_x, previous_center_y = get_box_centers(text_with_position[0][0])  # 开始时的中心点坐标
+
+        # 初始化合并文本的列表
+        merged_text = []
+
+        for box, text_tuple in text_with_position[1:]:
+            current_center_x, current_center_y = get_box_centers(box)  # 当前文本块的中心点坐标
+            text_str = text_tuple[0]  # 获取文本字符串
+            # 计算y方向和x方向的距离
+            y_distance = abs(previous_center_y - current_center_y)
+            if y_distance <= vertical_threshold:
+                # 如果y和x的距离都小于各自的阈值，拼接文本
+                current_group.append(text_str)
+            else:
+                # 如果距离超过阈值，保存拼接好的文本行，然后开始新行的拼接
+                merged_text.append(' '.join(current_group))
+                current_group = [text_str]
+            # 更新previous_center_x和previous_center_y为当前文本块的中心点坐标
+            previous_center_x, previous_center_y = current_center_x, current_center_y
+
+        # 不要忘记添加最后一个拼接好的文本行
+        merged_text.append(' '.join(current_group))
+        # 后面是绘制bounding box和展示图像的代码，保持不变
+        # for rect, _ in text_with_position:
+        #     points = np.array(rect, np.int32)
+        #     cv2.polylines(img, [points], True, (0, 255, 0), 2)
+        # 返回合并后的文本列表和原始数据
+        return merged_text, text_with_position
 
     def layout_extract(self, image):
         img = image[..., ::-1]

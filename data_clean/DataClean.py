@@ -2,61 +2,71 @@ from data_extract.DataExtract import DataExtractor
 import re
 import jieba
 
+params = ['感谢您下载包图网平台上提供的PPT作品，为了您和包图网以及原创作者的利益，请勿复制、传播、销售，否则将承担法律责任！包图网将对作品进行维权，按照传播下载次数进行十倍的索取赔偿！ibaotu.com',
+          "谢谢大家！金信期货研究院本报告所采用的数据均来自合规渠道，分析逻辑基于分析师的职业理解。分析师以勤勉的职业态度，独立、客观地出具本报告。本报告清晰准确地反映了分析师的研究观点，力求独立、客观和公正，结论不受任何第三方的授意或影响。分析师不曾因也将不会因本报告中的具体推荐意见或观点而直接或间获得受任何形式的报酬或利益。本报告仅供金信期货有限公司（以下简称“本公司”）客户参考之用。本公司不会因为关注、收到或阅读本报告内容而视相关人员为客户。在任何情况下，本报告中的信息或所表述的意见均不构成对任何人的投资建议或私人咨询建议。在任何情况下，本公司及其员工或者关联机构不承诺投资者一定获利，不与投资者分享投资收益，也不对任何人因使用本报告中的任何内容所引致的任何损失负任何责任。本公司具有中国证监会认可的期货投资咨询业务资格。本报告发布的信息均来源于第三方信息提供商或其他已公开信息，本公司对这些信息的准确性、完整性、时效性或可靠性不作任何保证。本报告所载的资料、意见及推测仅反映研究人员于发布本报告当日的判断且不代表本公司的立场，本报告所指的期货或投资标的的价格、价值及投资收入可能会波动，过往表现不应作为日后的表现依据。在不同时期，本公司可发出与本报告所载资料、意见及推测不一致的报告。本公司不保证本报告所含信息保持在最新状态，且对本报告所含信息可在不发出通知的情形下做出修改，投资者应当自行关注相应的更新或修改。   市场有风险，投资需谨慎。本报告难以考虑到个别客户特殊的投资目标、财务状况或需要，投资者应考虑本报告中的任何意见或建议是否符合其特定状况，且本报告不应取代投资者的独立判断。请务必注意，据本报告作出的任何投资决策均与本公司、本公司员工无关。本报告版权仅为本公司所有，未经本公司书面授权或协议约定，除法律规定的情况外，任何机构和个人不得以任何形式翻版、复制、发布、修改或以其他任何方式非法使用本报告的部分或全部内容。如引用、刊发，需注明出处为“金信期货”，且不得对本报告进行有悖原意的引用、删节和修改。金信期货投资咨询业务资格：湘证监机构字[2017]1号投资咨询团队成员：投资咨询团队成员：姚兴航（投资咨询编号：Z0015370）、黄婷莉（投资咨询编号：Z0015398）、曾文彪（投资咨询编号：Z0017990）、杨彦龙（投资咨询编号：Z0018274）、刁志国（投资咨询编号：Z0019292）、林敬炜（投资咨询编号：Z0018836）、王敬征（投资咨询编号：Z0019935）、张召举（投资咨询编号：Z0019989）、张恩希（投资咨询编号：Z0020176）。重要声明GOLDTRUST  FUTURES观点仅供参考，投资有风险，入市需谨慎",
+          "FUTURES观点仅供参考，投资有风险，入市需谨慎",
+          "免责声明",
+          "忠诚     敬畏     创新     卓越观点",
+          "无锡市金融一街8号国联金融大厦6楼(214121)",
+          "上海市浦东新区滨江大道999号高维大厦9楼（200135）",
+          "联系方式国联期货研究所无锡总部地址：",
+          "本报告中信息均来源于公开资料，我公司对这些信息的准确性和完整性不作任何保证。报告中的内容和意见仅供参考，并不构成对所述期货操作的依据。由于报告在撰写时融入了研究员个人的观点和见解以及分析方法，如与国联期货发布的其他信息有不一致及有不同的结论，未免发生疑问，本报告所载的观点并不代表国联期货公司的立场，所以请谨慎参考。我公司及其研究员对使用本报告及其内容所引发的任何直接或间接损失概不负责。本报告所提供资料",
+          "分析及预测只是反映国联期货公司在本报告所载明日期的判断，可随时修改，毋需提前通知。本报告版权归国联期货所有。未经书面许可，任何机构和个人不得进行任何形式的复制和发布。如遵循原文本意的引用，需注明引自“国联期货公司”，并保留我公司的一切权利。期市有风险投资需谨慎 ",
+
+          ]
+
+
 # 数据清晰模块
+def clean_license(text):
+    pattern = r"投资咨询业务资格：证监许可\【\d+\】\d+\s*号"
+    clean_text = re.sub(pattern, "", text)
+    return clean_text
+
+
 class DataClean:
     def __init__(self):
         pass
 
-    def data_preparation(self, text):
-        pass
+    def clean_author(self, text):
+        cleaned_text = re.sub(r'作者声明\s+.*?报酬\s*。', '', text, flags=re.DOTALL)
+        cleaned_text = re.sub(r'作者声明.*?报酬。\s*', '', cleaned_text, flags=re.DOTALL)
+        cleaned_text = re.sub(r'(?<! ) (?! )', '', cleaned_text)
+        cleaned_text = re.sub(r'(?<!\n)\n(?!\n)', ' ', cleaned_text)
+        cleaned_text = re.sub(r'(?<! ) (?! )', '', cleaned_text)
+        start = cleaned_text.find("作者声明")
+        end = cleaned_text.find("报酬", start)
 
-    def keyword_extract(self, text):
-        pass
+        if start != -1 and end != -1:
+            # 删除包括声明的文本。
+            clean_text = cleaned_text[:start] + cleaned_text[end:]
+        else:
+            clean_text = cleaned_text
+        for i in params:
+            clean_text = clean_text.replace(i, '')
+        return clean_text
 
-    def time_extract(self):
-        pass
+    def clean_miscellaneous(self, text):
+        patterns = [
+            r"姓名：\S+",
+            r"从业资格证号：\s*\S+",
+            r"投资咨询证号：\s*\S+",
+            r"电话：\s*\S+",
+            r"邮箱：\s*\S+"
+        ]
 
-    def state_extract(self):
-        pass
-
-    def product_extract(self):
-        pass
+        for pattern in patterns:
+            text = re.sub(pattern, '', text)
+        return text
 
     def clean(self, text):
-        return
+        text = clean_license(text)
+        text = self.clean_miscellaneous(text)
+        text = self.clean_author(text)
+        return text
 
 
 if __name__ == "__main__":
-    extract = DataExtractor()
-    text, document_type = extract.extract('华融融达_211217.PDF')
-    # text, document_type = extract.extract('道通期货_210800_0.html')
-    print(document_type)
-    decode_document = extract.decode(text, document_type)
-    cleaned_text = None
-    with open('stragery.txt', 'r', encoding='utf-8') as file:
-        stragery = file.readlines()
-    with open('products.txt','r',encoding='utf-8') as file:
-        product = file.readlines()
-    for i in range(len(stragery)):
-        stragery[i] = stragery[i].replace('\n', '')
-    for i in range(len(product)):
-        product[i] = product[i].replace('\n', '')
-    print(product)
-    keyword_stragery = re.compile(r'([^。]*\b(?:' + '|'.join(map(re.escape, stragery)) + r')\b[^。]*。)')
-    keyword_product = re.compile(r'([^。]*\b(?:' + '|'.join(map(re.escape, product)) + r')\b[^。]*。)')
-    if document_type == 'html':
-        # print(decode_document)
-        text_all = decode_document.get_text()
-        cleaned_text = re.sub(r'\n\s*\n', ' ', text_all)
-        # print(cleaned_text)
-    elif document_type == 'PDF':
-        cleaned_text = re.sub(r'\n\s*\n', ' ', decode_document)
-        # print(cleaned_text)
-    key_sentences = keyword_stragery.findall(cleaned_text)
-    key_sentences_product = keyword_product.findall(cleaned_text)
-
-    for sentence in key_sentences:
-        print(sentence)
-    for sentence in key_sentences_product:
-        print('product:')
-        print(sentence)
+    cleaner = DataClean()
+    text = "姓名：龙奥明 \n宝城期货投资咨询部 \n从业资格证号： F3035632 \n投资咨询证号： Z0014648 \n电话：0571-87006873 " \
+           "\n邮箱：longaoming@bcqhgs.com\n说：你好 "
+    print(cleaner.clean(text))
