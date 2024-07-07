@@ -1,12 +1,12 @@
-from data_extract.DataExtract import DataTempStore, DataExtractor
+from data_extract.DataExtract import  DataExtractor
 from type_classifier.TypeClassifier import TypeClassifier
 from utils import TextGetorHtml
 import yaml
 from DataExtract import DocumentProcessor
 import os
-from utils import find_allpage, pdf2img, check_chart
+from utils import find_allpage, pdf2img, check_chart, get_times
 import PyPDF2
-
+from bs4 import BeautifulSoup
 """ 
 all_params_pdf 参数解释
 "宝城期货": {'keyword': ['核心观点'], "pages": [], "chart": None, "distance": 15}
@@ -55,28 +55,48 @@ class InformationExtractor:
             yaml.dump(self.all_params_pdf, file)
 
     # 解析html
-    def parser_html(self, content, file_type, company_name):
+    def parser_html(self, data_path):
         """
         :param content: 输入的文本，为二进制
         :param file_type: 输入的文件类型为html
         :param company_name: 输入的所属的公司
         :return: 返回预测结果
         """
-        content = self.extractor.decode(content, file_type)
-        info_getor = TextGetorHtml(content, company_name)
-        texts = info_getor.get_texts()
-        result = self.model.predict(mode=1, text=texts, class_type=0)
-        print(result)
-        return result
+        all_paths=self.extractor._get_paths(data_path)
+        all_results=[]
+        for path in all_paths:
+            try:
+                with open(path, 'r',
+                          encoding='UTF-8') as f:
+                    html_content = f.read()
+                soup = BeautifulSoup(html_content, 'html.parser')
+            except:
+                continue
+            filename,_=self.extractor.get_name_and_type(path)
+            company_name = self.extractor.spilt_company_name(path)
+            info_getor = TextGetorHtml(soup, company_name)
+            texts = info_getor.get_texts()
+            predict = self.model.predict(mode=1, text=texts, class_type=0)
+            print(predict)
+            try:
+                time = get_times(self.extractor.extract(path)[0], "html")
+            except:
+                print(path)
+                time=path
+            result={"filename":filename,"content":self.extractor.extract(path),"predict":predict,"filetype":"html","time":time}
+            all_results.append(result)
+        return all_results
 
     # 解析pdf
     def parser_pdf(self, path):
         """
         :param path: 输入的为chart和no_chart所在的路径
-        :return: 返回预测结果为字典{文件名：预测结果}
+        :return: 返回预测结果为一个列表，列表中的每个元素为{"filename": i, "content": content_binary, "predict": set(all_result),
+                                           "filetype": "PDF"
+                                , "time": time}
         """
         data_dir = os.listdir(path)
-        consequence = {}
+        all_consequence = []
         # 遍历文件
         for keys in data_dir:
             # 判断是否已经有对应的处理关键字
@@ -86,6 +106,12 @@ class InformationExtractor:
                     # 检测是否为PDF
                     if 'PDF' in i:
                         # 启用关键字搜索
+                        content_binary, file_type = self.extractor.extract(path + "\\" + keys + '\\' + i)
+                        try:
+                            time = get_times(content_binary, "PDF")
+                        except:
+                            print(path)
+                            time = path
                         if self.all_params_pdf[keys]['keyword'] is not None:
                             # 使用find_allpage的方式查找关键字所在页
                             text, all_page = find_allpage(path + "\\" + keys + '\\' + i,
@@ -96,11 +122,13 @@ class InformationExtractor:
                                 result = self.model.predict(mode=1, text=text.replace(' ', ''), class_type=0)
                                 # model返回的为字符串，如果为空时长度为2，检测是否为空
                                 if len(result) != 2:
-                                    consequence[keys] = result
+                                    consequence={"filename": i, "content": content_binary, "predict": result,"filetype":"PDF"
+                                     ,"time": time}
+                                    all_consequence.append(consequence)
                                 # 如果为空说明可能其中有表格没提取到，那么便对含有关键词的页启用表格查找
                                 if self.all_params_pdf[keys]['chart'] and len(result) == 2:
                                     # 将表格转化为图像格式
-                                    image = pdf2img('E:\\curriculums\\data\\chart\\' + keys + '\\' + i, all_page)
+                                    image = pdf2img(os.path.join(path,keys,i), all_page)
                                     # 遍历所有表格图像
                                     all_result = []
                                     for img in image:
@@ -114,11 +142,13 @@ class InformationExtractor:
                                         result = self.model.predict(mode=1, text=text.replace(' ', ''), class_type=0)
                                         all_result.append(result)
                                     # 有些表格可能在描述同一件事，可能得到同一个结果，因此使用集合去除重复
-                                    consequence[keys] = set(all_result)
+                                    consequence={"filename": i, "content": content_binary, "predict": set(all_result),"filetype":"PDF"
+                                     ,"time": time}
+                                    all_consequence.append(consequence)
                             else:
                                 print(i)  # 定位关键字不正确的文本
                         else:  # 启动表格搜素方式
-                            with open('chart\\' + keys + '\\' + i, 'rb') as file:
+                            with open(os.path.join(path, keys, i), 'rb') as file:
                                 reader = PyPDF2.PdfFileReader(file)
                                 num_pages = reader.numPages
                             pages = self.all_params_pdf[keys]['pages']
@@ -134,14 +164,17 @@ class InformationExtractor:
                                 page_index = range(num_pages)
                             all_result = []
                             for j in page_index:
-                                chart_text = check_chart('chart\\' + keys + '\\' + i, j, mode=1)
+                                chart_text = check_chart(os.path.join(path, keys, i), j, mode=1)
                                 separator = ':'
                                 text = separator.join(str(x) for x in chart_text)
                                 result = self.model.predict(mode=1, text=text.replace(' ', ''), class_type=0)
                                 all_result.append(result)
                             # 有些表格可能在描述同一件事，可能得到同一个结果，因此使用集合去除重复
-                            consequence[keys] = set(all_result)
-        return consequence
+                            consequence = {"filename": i, "content": content_binary, "predict": set(all_result),
+                                           "filetype": "PDF"
+                                , "time": time}
+                            all_consequence.append(consequence)
+        return all_consequence
 
 
 if __name__ == "__main__":
