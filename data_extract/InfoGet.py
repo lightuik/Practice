@@ -147,7 +147,7 @@ class InformationExtractor:
                                     all_consequence.append(consequence)
                             else:
                                 print(i)  # 定位关键字不正确的文本
-                        else:  # 启动表格搜素方式
+                        else:  # 启动表格搜素方式v
                             with open(os.path.join(path, keys, i), 'rb') as file:
                                 reader = PyPDF2.PdfFileReader(file)
                                 num_pages = reader.numPages
