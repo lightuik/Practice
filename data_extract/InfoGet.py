@@ -100,6 +100,7 @@ class InformationExtractor:
     def parser_pdf(self, path, chart_flag="chart"):
         """
         :param path: 输入的为chart和no_chart所在的路径
+        :chart_flag: 选择为带表的或不带表的
         :return: 返回预测结果为一个列表，列表中的每个元素为{"filename": i, "content": content_binary, "predict": set(all_result),
                                                "filetype": "PDF", "time": time}
         """
