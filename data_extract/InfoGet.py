@@ -1,4 +1,4 @@
-from data_extract.DataExtract import  DataExtractor
+from data_extract.DataExtract import DataExtractor
 from type_classifier.TypeClassifier import TypeClassifier
 from data_extract.utils import TextGetorHtml
 import yaml
@@ -7,6 +7,7 @@ import os
 from data_extract.utils import find_allpage, pdf2img, check_chart, get_times
 import PyPDF2
 from bs4 import BeautifulSoup
+
 """ 
 all_params_pdf 参数解释
 "宝城期货": {'keyword': ['核心观点'], "pages": [], "chart": None, "distance": 15}
@@ -22,12 +23,15 @@ class InformationExtractor:
     def __init__(self, use_config=False):
         self.extractor = DataExtractor()
         self.model = TypeClassifier("config.yaml")
+
         # 是否启用参数配置
         if use_config:
-            with open("feature.yaml", 'r', encoding='utf-8') as file:
-                self.all_params_pdf = yaml.safe_load(file)
+            with open("feature_chart.yaml", 'r', encoding='utf-8') as file:
+                self.chart_params = yaml.safe_load(file)
+            with open("feature_chart.yaml", 'r', encoding='utf-8') as file:
+                self.no_chart_params = yaml.safe_load(file)
         else:
-            self.all_params_pdf = {
+            self.chart_params = {
                 "宝城期货": {'keyword': ['核心观点'], "pages": [], "chart": None, "distance": 15},
                 "山金期货": {'keyword': ['操作建议'], "pages": [], "chart": None, "distance": 15},
                 "格林大华": {'keyword': ['建议'], "pages": [], "chart": None, "distance": 15},
@@ -47,10 +51,14 @@ class InformationExtractor:
                 "弘业期货": {'keyword': ['核心观点'], "pages": [], "chart": None, "distance": 15},
                 "浙江新世纪": {'keyword': ['all'], "pages": [], "chart": None, "distance": 15}
             }
+            self.no_chart_params = None
         self.document_check = DocumentProcessor()
         # 存储在yaml文件中，后期完成后将不会在类内修改
-        with open('feature.yaml', 'w+', encoding='utf-8') as file:
-            yaml.dump(self.all_params_pdf, file)
+        with open('feature_no_chart.yaml', 'w+', encoding='utf-8') as file_no_chart:
+            yaml.dump(self.no_chart_params, file_no_chart)
+
+        with open('feature_chart.yaml', 'w+', encoding='utf-8') as file:
+            yaml.dump(self.chart_params, file)
 
     # 解析html
     def parser_html(self, data_path):
@@ -60,8 +68,8 @@ class InformationExtractor:
         :param company_name: 输入的所属的公司
         :return: 返回预测结果
         """
-        all_paths=self.extractor._get_paths(data_path)
-        all_results=[]
+        all_paths = self.extractor._get_paths(data_path)
+        all_results = []
         for path in all_paths:
             try:
                 with open(path, 'r',
@@ -85,13 +93,13 @@ class InformationExtractor:
         return all_results
 
     # 解析pdf
-    def parser_pdf(self, path):
+    def parser_pdf(self, path, chart_flag="chart"):
         """
         :param path: 输入的为chart和no_chart所在的路径
+        :chart_flag: 选择为带表的或不带表的
         :return: 返回预测结果为一个列表，列表中的每个元素为{"filename": i, "content": content_binary, "predict": set(all_result),
                                                "filetype": "PDF", "time": time}
         """
-
         def extract_and_predict(file_path, keyword, pages, chart):
             content_binary, file_type = self.extractor.extract(file_path)
             try:
@@ -112,7 +120,7 @@ class InformationExtractor:
                         all_result = [self.model.predict(mode=1, text=':'.join(str(x) for x in
                                                                                self.document_check.ocr_extract_merge(
                                                                                    img,
-                                                                                   distance=self.all_params_pdf[keys][
+                                                                                   distance=all_params_pdf[keys][
                                                                                        'distance'])).replace(' ', ''),
                                                          class_type=0) for img in image]
                         return {"filename": os.path.basename(file_path), "content": content_binary,
@@ -144,18 +152,22 @@ class InformationExtractor:
                 return {"filename": os.path.basename(file_path), "content": content_binary, "predict": set(all_result),
                         "filetype": "PDF", "time": time}
 
+        if chart_flag == "chart":
+            all_params_pdf = self.chart_params
+        else:
+            all_params_pdf = self.no_chart_params
         data_dir = os.listdir(path)
         all_consequence = []
 
         for keys in data_dir:
-            if keys not in self.all_params_pdf.keys():
-                self.all_params_pdf[keys]={'keyword': ['all'], "pages": [], "chart": None, "distance": 15}
+            if keys not in all_params_pdf.keys():
+                all_params_pdf[keys] = {'keyword': ['all'], "pages": [], "chart": None, "distance": 15}
             for file in os.listdir(os.path.join(path, keys)):
                 if 'PDF' in file:
                     file_path = os.path.join(path, keys, file)
-                    consequence = extract_and_predict(file_path, self.all_params_pdf[keys]['keyword'],
-                                                        self.all_params_pdf[keys]['pages'],
-                                                        self.all_params_pdf[keys]['chart'])
+                    consequence = extract_and_predict(file_path, all_params_pdf[keys]['keyword'],
+                                                      all_params_pdf[keys]['pages'],
+                                                      all_params_pdf[keys]['chart'])
                     if consequence:
                         all_consequence.append(consequence)
         return all_consequence
