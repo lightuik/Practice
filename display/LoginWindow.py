@@ -2,7 +2,9 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from PyQt5 import QtCore
 
-
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QApplication
+from qt_material import apply_stylesheet
 class LoginWindow(QtWidgets.QWidget):
     login_clicked = pyqtSignal()
 

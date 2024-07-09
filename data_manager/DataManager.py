@@ -4,7 +4,6 @@ import json
 from datetime import datetime
 import pandas as pd
 
-
 class DataManager:
     """
         完成数据的增删改查
@@ -80,7 +79,6 @@ class DataManager:
             return [item[0] for item in file_names]
         else:
             return []
-
     def Creat_New_table(self, table_name):
         # 创建一个和样表结构相同的表
         self.query = f"CREATE TABLE {table_name} LIKE exemplify_table;"
@@ -121,6 +119,13 @@ class DataManager:
         return predict_lists, time_line_list
 
 
+
+
+
+
+
+
+
 def data_get():
     data = pd.read_excel('C:/Users/25338/PycharmProjects/webstockGuise/no_chart.xlsx')
     results = []
@@ -128,18 +133,16 @@ def data_get():
         if row['predict'] == '[]':
             pass
         # predict = json.loads(row['predict'])
-        result = {"filename": row['filename'], "content": row['content'], "predict": row['predict'],
-                  "filetype": row['filetype'],
-                  "time": row['time']}
+        result ={"filename": row['filename'], "content": row['content'], "predict": row['predict'], "filetype": row['filetype'],
+             "time": row['time']}
         results.append(result)
     return results
-
 
 if __name__ == "__main__":
     DataManager_get = DataManager()
     ##############PDF提取#################
     # info_extractor = InformationExtractor()
-    id_max = DataManager_get.id_MAX_Get('redis')[0] + 1
+    id_max = DataManager_get.id_MAX_Get('redis')[0]+1
     all_tables = DataManager_get.tables_query()  # 查询所有的表格
     tables_list = [item[0] for item in all_tables]
     filename_list = DataManager_get.filenames_Get()
@@ -152,8 +155,8 @@ if __name__ == "__main__":
         Binary_content = file_data['content']
         if file_name not in filename_list:
             filename_list.append(file_name)
-            id_max_filename_table = 1 if DataManager_get.id_MAX_Get('binary_code') == 0 else \
-                DataManager_get.id_MAX_Get('binary_code')[0] + 1
+            id_max_filename_table = 1 if DataManager_get.id_MAX_Get('binary_code')==0 else \
+                DataManager_get.id_MAX_Get('binary_code')[0]+1
             DataManager_get.insert_data(table_name='binary_code', id=id_max_filename_table,
                                         filename=file_name, binary_content=Binary_content)
 

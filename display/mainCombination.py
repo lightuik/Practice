@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QDe
 from mainWindow import MainWindow  # 假设这是你的 MainPage 类
 from LoginWindow import LoginWindow  # 假设这是你的 LoginWindow 类
 
-
+PATH_OF_COMPANY="E:\curriculums\Practice\data_extract\company.txt"
 class MyAPP(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -19,10 +19,9 @@ class MyAPP(QMainWindow):
         main_widget = QWidget(self)
         self.setCentralWidget(main_widget)
         # 创建并添加 MainPage 到布局
-        main_page = MainWindow()
+        main_page = MainWindow(PATH_OF_COMPANY)
         layout = QVBoxLayout(main_widget)
         layout.addWidget(main_page)
-
         # 将窗口居中显示
         window_geometry = self.frameGeometry()
         center_point = QDesktopWidget().availableGeometry().center()

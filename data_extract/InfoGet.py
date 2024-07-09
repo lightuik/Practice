@@ -1,13 +1,12 @@
-from data_extract.DataExtract import DataExtractor
+from data_extract.DataExtract import  DataExtractor
 from type_classifier.TypeClassifier import TypeClassifier
-from utils import TextGetorHtml
+from data_extract.utils import TextGetorHtml
 import yaml
-from DataExtract import DocumentProcessor
+from data_extract.DataExtract import DocumentProcessor
 import os
-from utils import find_allpage, pdf2img, check_chart, get_times
+from data_extract.utils import find_allpage, pdf2img, check_chart, get_times
 import PyPDF2
 from bs4 import BeautifulSoup
-
 """ 
 all_params_pdf 参数解释
 "宝城期货": {'keyword': ['核心观点'], "pages": [], "chart": None, "distance": 15}
@@ -19,21 +18,16 @@ chart:代表文本中是否存在表格
 如果一个文本既有关键字又有表格且在表格页提取到的结果无法得到预测，则使用True代表启用
 distance代表表格之间段落合并的距离，即离的有多近可以合并为一段。
 """
-
-
 class InformationExtractor:
     def __init__(self, use_config=False):
         self.extractor = DataExtractor()
         self.model = TypeClassifier("config.yaml")
-
         # 是否启用参数配置
         if use_config:
-            with open("feature_chart.yaml", 'r', encoding='utf-8') as file:
-                self.chart_params = yaml.safe_load(file)
-            with open("feature_chart.yaml", 'r', encoding='utf-8') as file:
-                self.no_chart_params = yaml.safe_load(file)
+            with open("feature.yaml", 'r', encoding='utf-8') as file:
+                self.all_params_pdf = yaml.safe_load(file)
         else:
-            self.chart_params = {
+            self.all_params_pdf = {
                 "宝城期货": {'keyword': ['核心观点'], "pages": [], "chart": None, "distance": 15},
                 "山金期货": {'keyword': ['操作建议'], "pages": [], "chart": None, "distance": 15},
                 "格林大华": {'keyword': ['建议'], "pages": [], "chart": None, "distance": 15},
@@ -53,14 +47,10 @@ class InformationExtractor:
                 "弘业期货": {'keyword': ['核心观点'], "pages": [], "chart": None, "distance": 15},
                 "浙江新世纪": {'keyword': ['all'], "pages": [], "chart": None, "distance": 15}
             }
-            self.no_chart_params = None
         self.document_check = DocumentProcessor()
         # 存储在yaml文件中，后期完成后将不会在类内修改
-        with open('feature_no_chart.yaml', 'w+', encoding='utf-8') as file_no_chart:
-            yaml.dump(self.no_chart_params, file_no_chart)
-
-        with open('feature_chart.yaml', 'w+', encoding='utf-8') as file:
-            yaml.dump(self.chart_params, file)
+        with open('feature.yaml', 'w+', encoding='utf-8') as file:
+            yaml.dump(self.all_params_pdf, file)
 
     # 解析html
     def parser_html(self, data_path):
@@ -70,8 +60,8 @@ class InformationExtractor:
         :param company_name: 输入的所属的公司
         :return: 返回预测结果
         """
-        all_paths = self.extractor._get_paths(data_path)
-        all_results = []
+        all_paths=self.extractor._get_paths(data_path)
+        all_results=[]
         for path in all_paths:
             try:
                 with open(path, 'r',
@@ -80,7 +70,6 @@ class InformationExtractor:
                 soup = BeautifulSoup(html_content, 'html.parser')
             except:
                 continue
-            filename, _ = self.extractor.get_name_and_type(path)
             company_name = self.extractor.spilt_company_name(path)
             info_getor = TextGetorHtml(soup, company_name)
             texts = info_getor.get_texts()
@@ -90,17 +79,15 @@ class InformationExtractor:
                 time = get_times(self.extractor.extract(path)[0], "html")
             except:
                 print(path)
-                time = path
-            result = {"filename": filename, "content": self.extractor.extract(path), "predict": predict,
-                      "filetype": "html", "time": time}
+                time=path
+            result={"filename":os.path.basename(path),"content":self.extractor.extract(path),"predict":predict,"filetype":"html","time":time}
             all_results.append(result)
         return all_results
 
     # 解析pdf
-    def parser_pdf(self, path, chart_flag="chart"):
+    def parser_pdf(self, path):
         """
         :param path: 输入的为chart和no_chart所在的路径
-        :chart_flag: 选择为带表的或不带表的
         :return: 返回预测结果为一个列表，列表中的每个元素为{"filename": i, "content": content_binary, "predict": set(all_result),
                                                "filetype": "PDF", "time": time}
         """
@@ -118,16 +105,14 @@ class InformationExtractor:
                 if text is not None:
                     result = self.model.predict(mode=1, text=text.replace(' ', ''), class_type=0)
                     if len(result) != 2:
-                        print(text)
                         return {"filename": os.path.basename(file_path), "content": content_binary, "predict": result,
                                 "filetype": "PDF", "time": time}
-
                     elif chart and len(result) == 2:
                         image = pdf2img(file_path, all_page)
                         all_result = [self.model.predict(mode=1, text=':'.join(str(x) for x in
                                                                                self.document_check.ocr_extract_merge(
                                                                                    img,
-                                                                                   distance=all_params_pdf[keys][
+                                                                                   distance=self.all_params_pdf[keys][
                                                                                        'distance'])).replace(' ', ''),
                                                          class_type=0) for img in image]
                         return {"filename": os.path.basename(file_path), "content": content_binary,
@@ -159,30 +144,22 @@ class InformationExtractor:
                 return {"filename": os.path.basename(file_path), "content": content_binary, "predict": set(all_result),
                         "filetype": "PDF", "time": time}
 
-        if chart_flag == "chart":
-            all_params_pdf = self.chart_params
-        else:
-            all_params_pdf = self.no_chart_params
         data_dir = os.listdir(path)
         all_consequence = []
 
         for keys in data_dir:
-            if keys not in all_params_pdf.keys():
-                all_params_pdf[keys] = {'keyword': ['all'], "pages": [], "chart": None, "distance": 15}
+            if keys not in self.all_params_pdf.keys():
+                self.all_params_pdf[keys]={'keyword': ['all'], "pages": [], "chart": None, "distance": 15}
             for file in os.listdir(os.path.join(path, keys)):
                 if 'PDF' in file:
                     file_path = os.path.join(path, keys, file)
-                    consequence = extract_and_predict(file_path, all_params_pdf[keys]['keyword'],
-                                                      all_params_pdf[keys]['pages'],
-                                                      all_params_pdf[keys]['chart'])
+                    consequence = extract_and_predict(file_path, self.all_params_pdf[keys]['keyword'],
+                                                        self.all_params_pdf[keys]['pages'],
+                                                        self.all_params_pdf[keys]['chart'])
                     if consequence:
                         all_consequence.append(consequence)
-
         return all_consequence
 
-
 if __name__ == "__main__":
-    # document_check = DocumentProcessor()
-    # document_check.ocr_extract_merge(image[0], distance=15)
     info_extractor = InformationExtractor()
-    info_extractor.parser_pdf(path="./chart/chart/")
+    info_extractor.parser_pdf("E:\curriculums\data\chart")

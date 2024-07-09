@@ -52,8 +52,8 @@ class DataExtractor:
 
     def decode_html(self, binary_html):
         html_content = binary_html.decode('utf-8')
-        soup = BeautifulSoup(html_content, 'html.parser')
-        return soup
+        # soup = BeautifulSoup(html_content, 'html.parser')
+        return html_content
 
     def decode_PDF(self, binary_pdf):
         all_text = ""
@@ -358,9 +358,7 @@ class DocumentProcessor:
         # for rect, _ in text_with_position:
         #     points = np.array(rect, np.int32)
         #     cv2.polylines(img, [points], True, (0, 255, 0), 2)
-        # # 返回合并后的文本列表和原始数据
-        # cv2.imshow("window",img)
-        # cv2.waitKey()
+        # 返回合并后的文本列表和原始数据
         return merged_text, text_with_position
 
     def layout_extract(self, image):
