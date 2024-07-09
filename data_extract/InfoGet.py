@@ -1,10 +1,10 @@
 from data_extract.DataExtract import  DataExtractor
 from type_classifier.TypeClassifier import TypeClassifier
-from utils import TextGetorHtml
+from data_extract.utils import TextGetorHtml
 import yaml
-from DataExtract import DocumentProcessor
+from data_extract.DataExtract import DocumentProcessor
 import os
-from utils import find_allpage, pdf2img, check_chart, get_times
+from data_extract.utils import find_allpage, pdf2img, check_chart, get_times
 import PyPDF2
 from bs4 import BeautifulSoup
 """ 
@@ -18,8 +18,6 @@ chart:代表文本中是否存在表格
 如果一个文本既有关键字又有表格且在表格页提取到的结果无法得到预测，则使用True代表启用
 distance代表表格之间段落合并的距离，即离的有多近可以合并为一段。
 """
-
-
 class InformationExtractor:
     def __init__(self, use_config=False):
         self.extractor = DataExtractor()
@@ -72,7 +70,6 @@ class InformationExtractor:
                 soup = BeautifulSoup(html_content, 'html.parser')
             except:
                 continue
-            filename,_=self.extractor.get_name_and_type(path)
             company_name = self.extractor.spilt_company_name(path)
             info_getor = TextGetorHtml(soup, company_name)
             texts = info_getor.get_texts()
@@ -83,7 +80,7 @@ class InformationExtractor:
             except:
                 print(path)
                 time=path
-            result={"filename":filename,"content":self.extractor.extract(path),"predict":predict,"filetype":"html","time":time}
+            result={"filename":os.path.basename(path),"content":self.extractor.extract(path),"predict":predict,"filetype":"html","time":time}
             all_results.append(result)
         return all_results
 
@@ -161,10 +158,7 @@ class InformationExtractor:
                                                         self.all_params_pdf[keys]['chart'])
                     if consequence:
                         all_consequence.append(consequence)
-
-
         return all_consequence
-
 
 if __name__ == "__main__":
     info_extractor = InformationExtractor()

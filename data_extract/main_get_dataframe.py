@@ -1,5 +1,5 @@
-from InfoGet import  InformationExtractor
-PAHTS=["E:\curriculums\data\chart_test","E:\curriculums\data\\no_chart_test"]
+from data_extract.InfoGet import  InformationExtractor
+PAHTS=["E:\curriculums\data\chart","E:\curriculums\data\\no_chart"]
 import pandas as pd
 def execute(paths):
     info_extractor=InformationExtractor()
@@ -13,3 +13,4 @@ def execute(paths):
 if __name__=="__main__":
     all_results=execute(PAHTS)
     data_frame=pd.DataFrame(all_results)
+    data_frame.to_excel('output.xlsx', index=False)

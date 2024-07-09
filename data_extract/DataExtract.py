@@ -52,8 +52,8 @@ class DataExtractor:
 
     def decode_html(self, binary_html):
         html_content = binary_html.decode('utf-8')
-        soup = BeautifulSoup(html_content, 'html.parser')
-        return soup
+        # soup = BeautifulSoup(html_content, 'html.parser')
+        return html_content
 
     def decode_PDF(self, binary_pdf):
         all_text = ""
