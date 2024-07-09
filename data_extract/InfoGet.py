@@ -104,6 +104,7 @@ class InformationExtractor:
         :return: 返回预测结果为一个列表，列表中的每个元素为{"filename": i, "content": content_binary, "predict": set(all_result),
                                                "filetype": "PDF", "time": time}
         """
+
         def extract_and_predict(file_path, keyword, pages, chart):
             content_binary, file_type = self.extractor.extract(file_path)
             try:
@@ -117,8 +118,10 @@ class InformationExtractor:
                 if text is not None:
                     result = self.model.predict(mode=1, text=text.replace(' ', ''), class_type=0)
                     if len(result) != 2:
+                        print(text)
                         return {"filename": os.path.basename(file_path), "content": content_binary, "predict": result,
                                 "filetype": "PDF", "time": time}
+
                     elif chart and len(result) == 2:
                         image = pdf2img(file_path, all_page)
                         all_result = [self.model.predict(mode=1, text=':'.join(str(x) for x in
@@ -179,5 +182,7 @@ class InformationExtractor:
 
 
 if __name__ == "__main__":
+    # document_check = DocumentProcessor()
+    # document_check.ocr_extract_merge(image[0], distance=15)
     info_extractor = InformationExtractor()
-    info_extractor.parser_pdf("E:\curriculums\data\chart")
+    info_extractor.parser_pdf(path="./chart/chart/")

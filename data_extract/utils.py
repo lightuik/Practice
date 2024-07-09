@@ -11,7 +11,7 @@ import PyPDF2
 import pandas as pd
 from DataExtract import DataExtractor
 from bs4 import BeautifulSoup
-document_check = DocumentProcessor()
+
 cleaner = DataClean()
 
 
@@ -134,6 +134,7 @@ def check_method_1(path, page_nums):
     :param page_nums: 提取的页数
     :return: 返回表中数据
     '''
+    document_check = DocumentProcessor()
     doc = fitz.open(path)
     page = doc.load_page(page_nums)
     pix = page.get_pixmap()

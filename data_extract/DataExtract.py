@@ -358,7 +358,9 @@ class DocumentProcessor:
         # for rect, _ in text_with_position:
         #     points = np.array(rect, np.int32)
         #     cv2.polylines(img, [points], True, (0, 255, 0), 2)
-        # 返回合并后的文本列表和原始数据
+        # # 返回合并后的文本列表和原始数据
+        # cv2.imshow("window",img)
+        # cv2.waitKey()
         return merged_text, text_with_position
 
     def layout_extract(self, image):
